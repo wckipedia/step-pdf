@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: "step-pdf — Free PDF & File Conversion",
   description:
     "Oh no step-pdf, I'm stuck! Free, fast file conversion tools. Drop a file, pick your escape route, download for free.",
+  icons: {
+    icon: [{ url: "/step-pdf.png", type: "image/png" }],
+    apple: "/step-pdf.png",
+    shortcut: "/step-pdf.png",
+  },
 };
 
 export default function RootLayout({

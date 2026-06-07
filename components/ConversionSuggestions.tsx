@@ -28,7 +28,7 @@ const STATUS_MESSAGES: Record<ConversionStatus, string> = {
   idle: "",
   reading: "Reading your file…",
   finding: "Finding escape routes…",
-  converting: "Converting… this can take a minute for server tools.",
+  converting: "Converting… this can take a minute.",
   complete: "Unstuck. Ready to download.",
   error: "",
 };
@@ -204,23 +204,11 @@ export default function ConversionSuggestions({
               </h4>
               <p className="mt-2 flex-1 text-sm text-muted">{tool.description}</p>
 
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <span
-                  className={`border px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${
-                    tool.runtime === "browser"
-                      ? "border-foreground text-foreground"
-                      : "border-muted text-muted"
-                  }`}
-                >
-                  {tool.runtime === "browser" ? "Browser" : "Server"}
-                </span>
-
-                {needsMultiple && files.length < 2 && (
-                  <span className="text-[10px] uppercase tracking-widest text-muted">
-                    Needs 2+ PDFs
-                  </span>
-                )}
-              </div>
+              {needsMultiple && files.length < 2 && (
+                <p className="mt-4 text-[10px] uppercase tracking-widest text-muted">
+                  Needs 2+ PDFs
+                </p>
+              )}
 
               {needsPassword && (
                 <input

@@ -20,6 +20,10 @@
   --font-display: var(--font-bebas);
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
