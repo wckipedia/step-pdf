@@ -121,19 +121,20 @@ Used by server-side tools only. Browser tools never call this endpoint.
 
 ```
 app/
-  page.tsx                  # Homepage
-  layout.tsx                # Root layout
+  page.tsx                  # Homepage & conversion flow
+  layout.tsx                # Root layout & metadata
   globals.css               # Tailwind + brand styles
+  icon.png                  # Favicon
   api/convert/route.ts      # Server conversion endpoint
 components/
-  Navbar.tsx
+  Navbar.tsx                # Logo + section links (smooth scroll)
   Hero.tsx
   FileDropzone.tsx
   ConversionSuggestions.tsx
-  ToolGrid.tsx
+  ToolGrid.tsx              # Tabbed tools browser
   HowItWorks.tsx
   Ticker.tsx
-  Footer.tsx
+  Footer.tsx                # Vision & FAQ
 lib/
   conversionRules.ts        # Tool definitions & file-type mapping
   clientConverters.ts       # Browser PDF tools
@@ -143,19 +144,9 @@ lib/
   fileUtils.ts              # File helpers
 types/
   conversion.ts             # Shared types
+public/
+  step-pdf.png              # Brand asset
 ```
-
-## Testing
-
-1. **Image to PDF** — drop a `.png`, click Convert
-2. **TXT to PDF** — drop a `.txt` file
-3. **Merge PDF** — drop two or more `.pdf` files
-4. **Rotate / Split** — drop a single `.pdf`
-5. **Word to PDF** — drop a `.docx` (LibreOffice required)
-6. **PDF to Word** — drop a `.pdf` (LibreOffice required)
-7. **Compress PDF** — drop a `.pdf` (Ghostscript required)
-
-If a required binary is missing, the app shows a setup message instead of failing silently. Server conversions may take up to a minute — the UI shows a loading state while waiting.
 
 ## License
 
