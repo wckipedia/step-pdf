@@ -118,13 +118,13 @@ export const ALL_TOOLS: ConversionTool[] = [
   {
     id: "pdf-to-word",
     name: "PDF to Word",
-    description: "Turn a PDF into an editable .docx file.",
+    description: "Turn a PDF into an editable .docx file with accurate text.",
     category: "Convert from PDF",
     runtime: "server",
     inputExtensions: [".pdf"],
     outputExtension: ".docx",
     implemented: true,
-    requiredBinary: "libreoffice",
+    requiredBinary: "pdf2docx",
   },
   {
     id: "pdf-to-powerpoint",

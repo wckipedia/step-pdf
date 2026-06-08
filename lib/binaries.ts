@@ -3,7 +3,12 @@ import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
 
-export type BinaryName = "libreoffice" | "ghostscript" | "poppler" | "qpdf";
+export type BinaryName =
+  | "libreoffice"
+  | "ghostscript"
+  | "poppler"
+  | "qpdf"
+  | "pdf2docx";
 
 const BINARY_COMMANDS: Record<
   BinaryName,
@@ -25,6 +30,10 @@ const BINARY_COMMANDS: Record<
     commands: ["qpdf"],
     versionArgs: ["--version"],
   },
+  pdf2docx: {
+    commands: [],
+    versionArgs: [],
+  },
 };
 
 const INSTALL_MESSAGES: Record<BinaryName, string> = {
@@ -36,6 +45,8 @@ const INSTALL_MESSAGES: Record<BinaryName, string> = {
     "This escape route needs Poppler installed on the server. Install with: brew install poppler (macOS) or apt install poppler-utils (Linux).",
   qpdf:
     "This escape route needs qpdf installed on the server. Install with: brew install qpdf (macOS) or apt install qpdf (Linux).",
+  pdf2docx:
+    "PDF to Word needs pdf2docx. Install with: pip3 install pdf2docx (or pip3 install -r requirements.txt).",
 };
 
 const resolvedCache = new Map<BinaryName, string | null>();
@@ -52,9 +63,31 @@ async function tryCommand(
   }
 }
 
+const PDF2DOCX_IMPORT_CHECK = [
+  "-c",
+  "from pdf2docx import Converter; import sys; sys.exit(0)",
+];
+
+const PDF2DOCX_PYTHON_COMMANDS = ["python3", "python"];
+
+async function resolvePdf2docxPython(): Promise<string | null> {
+  for (const cmd of PDF2DOCX_PYTHON_COMMANDS) {
+    if (await tryCommand(cmd, PDF2DOCX_IMPORT_CHECK)) {
+      return cmd;
+    }
+  }
+  return null;
+}
+
 export async function resolveBinary(name: BinaryName): Promise<string | null> {
   if (resolvedCache.has(name)) {
     return resolvedCache.get(name) ?? null;
+  }
+
+  if (name === "pdf2docx") {
+    const python = await resolvePdf2docxPython();
+    resolvedCache.set(name, python);
+    return python;
   }
 
   const config = BINARY_COMMANDS[name];
@@ -89,6 +122,7 @@ export async function checkAllBinaries(): Promise<
     "ghostscript",
     "poppler",
     "qpdf",
+    "pdf2docx",
   ];
   const results = await Promise.all(
     names.map(async (name) => ({

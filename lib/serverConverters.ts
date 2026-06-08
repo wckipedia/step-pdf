@@ -3,7 +3,7 @@ import { promisify } from "util";
 import fs from "fs/promises";
 import path from "path";
 import JSZip from "jszip";
-import { requireBinary } from "@/lib/binaries";
+import { requireBinary, resolveBinary } from "@/lib/binaries";
 import type { ConversionOptions } from "@/types/conversion";
 import type { ToolId } from "@/types/conversion";
 
@@ -56,6 +56,49 @@ async function convertOfficeToPdf(
   const outputPath = await runLibreOffice(inputPath, outputDir, "pdf");
   await fs.access(outputPath);
   return outputPath;
+}
+
+const PDF_TO_DOCX_SCRIPT = path.join(
+  process.cwd(),
+  "scripts",
+  "pdf_to_docx.py"
+);
+
+async function convertPdfToDocxWithPdf2docx(
+  python: string,
+  inputPath: string,
+  outputDir: string
+): Promise<string> {
+  const baseName = path.basename(inputPath, path.extname(inputPath));
+  const outputPath = path.join(outputDir, `${baseName}.docx`);
+
+  await execFileAsync(
+    python,
+    [PDF_TO_DOCX_SCRIPT, inputPath, outputPath],
+    { timeout: 180000 }
+  );
+
+  await fs.access(outputPath);
+  return outputPath;
+}
+
+async function convertPdfToDocx(
+  inputPath: string,
+  outputDir: string
+): Promise<string> {
+  const python = await resolveBinary("pdf2docx");
+  if (python) {
+    try {
+      return await convertPdfToDocxWithPdf2docx(python, inputPath, outputDir);
+    } catch (pdf2docxError) {
+      console.warn(
+        "[pdf-to-word] pdf2docx failed, falling back to LibreOffice:",
+        pdf2docxError instanceof Error ? pdf2docxError.message : pdf2docxError
+      );
+    }
+  }
+
+  return convertPdfToOffice(inputPath, outputDir, "docx");
 }
 
 async function convertPdfToOffice(
@@ -214,7 +257,7 @@ export async function runServerConversion(
       };
     }
     case "pdf-to-word": {
-      const outPath = await convertPdfToOffice(inputPath, outputDir, "docx");
+      const outPath = await convertPdfToDocx(inputPath, outputDir);
       const buffer = await fs.readFile(outPath);
       const baseName = path.basename(originalName, path.extname(originalName));
       return {

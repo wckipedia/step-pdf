@@ -33,7 +33,7 @@ These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any 
 | Word to PDF | `.doc`, `.docx` | LibreOffice |
 | PowerPoint to PDF | `.ppt`, `.pptx` | LibreOffice |
 | Excel to PDF | `.xls`, `.xlsx` | LibreOffice |
-| PDF to Word | `.pdf` | LibreOffice |
+| PDF to Word | `.pdf` | pdf2docx (LibreOffice fallback) |
 | PDF to PowerPoint | `.pdf` | LibreOffice |
 | Compress PDF | `.pdf` | Ghostscript |
 | PDF to JPG | `.pdf` | Poppler |
@@ -41,7 +41,7 @@ These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any 
 
 Server uploads are stored in a **temporary directory only** and deleted when the request finishes. Nothing is saved permanently.
 
-> **PDF → Word / PowerPoint** uses LibreOffice and works best on simple text-based PDFs. Scanned, encrypted, or heavily designed PDFs may fail or lose formatting.
+> **PDF → Word** uses pdf2docx (PyMuPDF) for better text fidelity, with LibreOffice as fallback. **PDF → PowerPoint** uses LibreOffice. Scanned, encrypted, or heavily designed PDFs may still fail or lose formatting.
 
 ## Quick start
 
@@ -61,12 +61,14 @@ Browser tools work out of the box. For server tools, install the native binaries
 ```bash
 brew install --cask libreoffice
 brew install ghostscript poppler qpdf
+pip3 install -r requirements.txt
 ```
 
 **Linux (Debian/Ubuntu):**
 
 ```bash
-sudo apt install libreoffice ghostscript poppler-utils qpdf
+sudo apt install libreoffice ghostscript poppler-utils qpdf python3-pip
+pip3 install -r requirements.txt
 ```
 
 ## Scripts
@@ -138,8 +140,11 @@ components/
 lib/
   conversionRules.ts        # Tool definitions & file-type mapping
   clientConverters.ts       # Browser PDF tools
-  serverConverters.ts       # LibreOffice, Ghostscript, etc.
+  serverConverters.ts       # pdf2docx, LibreOffice, Ghostscript, etc.
   binaries.ts               # Native binary detection
+scripts/
+  pdf_to_docx.py            # PDF → Word via pdf2docx
+requirements.txt            # Python deps (pdf2docx)
   tempFiles.ts              # Temp storage & cleanup
   fileUtils.ts              # File helpers
 types/
