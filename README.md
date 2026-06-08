@@ -24,7 +24,7 @@ Free PDF and file conversion tools. Drop a file, pick a tool, download the resul
 | Split PDF | `.pdf` → zip of pages |
 | Rotate PDF | `.pdf` |
 
-These work immediately after `npm run dev` and deploy cleanly to **Vercel** or any static/Next.js host.
+These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any static/Next.js host.
 
 ### Server — uploads to `/api/convert`, needs native binaries
 
@@ -46,8 +46,8 @@ Server uploads are stored in a **temporary directory only** and deleted when the
 ## Quick start
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -73,10 +73,10 @@ sudo apt install libreoffice ghostscript poppler-utils qpdf
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Production build |
-| `npm start` | Run production server |
-| `npm run lint` | Run ESLint |
+| `pnpm dev` | Start dev server |
+| `pnpm build` | Production build |
+| `pnpm start` | Run production server |
+| `pnpm lint` | Run ESLint |
 
 ## CI
 
@@ -107,8 +107,8 @@ Server tools **will not work on Vercel** — the platform cannot run LibreOffice
 For all browser + server tools, deploy to a Node.js host where you can install the native binaries (Railway, Render, Fly.io, a VPS, etc.):
 
 ```bash
-npm run build
-npm start
+pnpm build
+pnpm start
 ```
 
 Install the same `brew` / `apt` packages on the server as you would locally.
