@@ -9,6 +9,12 @@ import type { ToolId } from "@/types/conversion";
 
 const execFileAsync = promisify(execFile);
 
+const PDF_TO_DOCX_SCRIPT = path.join(
+  process.cwd(),
+  "scripts",
+  "pdf_to_docx.py"
+);
+
 export interface ServerConversionOutput {
   buffer: Buffer;
   filename: string;
@@ -54,6 +60,24 @@ async function convertOfficeToPdf(
   outputDir: string
 ): Promise<string> {
   const outputPath = await runLibreOffice(inputPath, outputDir, "pdf");
+  await fs.access(outputPath);
+  return outputPath;
+}
+
+async function convertPdfToDocx(
+  inputPath: string,
+  outputDir: string
+): Promise<string> {
+  const python = await requireBinary("pdf2docx");
+  const baseName = path.basename(inputPath, path.extname(inputPath));
+  const outputPath = path.join(outputDir, `${baseName}.docx`);
+
+  await execFileAsync(
+    python,
+    [PDF_TO_DOCX_SCRIPT, inputPath, outputPath],
+    { timeout: 180000 }
+  );
+
   await fs.access(outputPath);
   return outputPath;
 }
@@ -214,7 +238,7 @@ export async function runServerConversion(
       };
     }
     case "pdf-to-word": {
-      const outPath = await convertPdfToOffice(inputPath, outputDir, "docx");
+      const outPath = await convertPdfToDocx(inputPath, outputDir);
       const buffer = await fs.readFile(outPath);
       const baseName = path.basename(originalName, path.extname(originalName));
       return {
