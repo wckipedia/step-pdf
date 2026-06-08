@@ -2,9 +2,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import fs from "fs/promises";
 import path from "path";
-import JSZip from "jszip";
 import { requireBinary, resolveBinary } from "@/lib/binaries";
-import type { ConversionOptions } from "@/types/conversion";
 import type { ToolId } from "@/types/conversion";
 
 const execFileAsync = promisify(execFile);
@@ -59,7 +57,7 @@ async function convertOfficeToPdf(
 }
 
 const PDF_TO_DOCX_SCRIPT = path.join(
-  process.cwd(),
+  /* turbopackIgnore: true */ process.cwd(),
   "scripts",
   "pdf_to_docx.py"
 );
@@ -155,80 +153,11 @@ async function compressPdf(
   return outputPath;
 }
 
-async function pdfToJpg(
-  inputPath: string,
-  outputDir: string,
-  originalName: string
-): Promise<ServerConversionOutput> {
-  const pdftoppm = await requireBinary("poppler");
-  const prefix = path.join(outputDir, "page");
-
-  await execFileAsync(
-    pdftoppm,
-    ["-jpeg", "-r", "150", inputPath, prefix],
-    { timeout: 120000 }
-  );
-
-  const files = (await fs.readdir(outputDir))
-    .filter((f) => f.startsWith("page") && f.endsWith(".jpg"))
-    .sort();
-
-  if (files.length === 0) {
-    throw new Error("PDF to JPG produced no output images.");
-  }
-
-  const zip = new JSZip();
-  for (const file of files) {
-    const content = await fs.readFile(path.join(outputDir, file));
-    zip.file(file, content);
-  }
-
-  const zipBuffer = await zip.generateAsync({ type: "nodebuffer" });
-  const baseName = path.basename(originalName, path.extname(originalName));
-
-  return {
-    buffer: zipBuffer,
-    filename: `${baseName}-jpg.zip`,
-    mimeType: "application/zip",
-  };
-}
-
-async function protectPdf(
-  inputPath: string,
-  outputDir: string,
-  options?: ConversionOptions
-): Promise<string> {
-  const qpdf = await requireBinary("qpdf");
-  const password = options?.password?.trim();
-  if (!password) {
-    throw new Error("Password is required to protect a PDF.");
-  }
-
-  const outputPath = path.join(outputDir, "protected.pdf");
-  await execFileAsync(
-    qpdf,
-    [
-      "--encrypt",
-      password,
-      password,
-      "256",
-      "--",
-      inputPath,
-      outputPath,
-    ],
-    { timeout: 60000 }
-  );
-
-  await fs.access(outputPath);
-  return outputPath;
-}
-
 export async function runServerConversion(
   toolId: ToolId,
   inputPaths: string[],
   outputDir: string,
-  originalNames: string[],
-  options?: ConversionOptions
+  originalNames: string[]
 ): Promise<ServerConversionOutput> {
   const inputPath = inputPaths[0];
   const originalName = originalNames[0];
@@ -274,18 +203,6 @@ export async function runServerConversion(
         buffer,
         filename: `${baseName}.pptx`,
         mimeType: OFFICE_MIME[".pptx"],
-      };
-    }
-    case "pdf-to-jpg":
-      return pdfToJpg(inputPath, outputDir, originalName);
-    case "protect-pdf": {
-      const outPath = await protectPdf(inputPath, outputDir, options);
-      const buffer = await fs.readFile(outPath);
-      const baseName = path.basename(originalName, path.extname(originalName));
-      return {
-        buffer,
-        filename: `${baseName}-protected.pdf`,
-        mimeType: "application/pdf",
       };
     }
     default:

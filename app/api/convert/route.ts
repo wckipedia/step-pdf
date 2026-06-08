@@ -9,7 +9,7 @@ import {
 } from "@/lib/fileUtils";
 import { createTempDir, writeTempFile, cleanupTempDir } from "@/lib/tempFiles";
 import { runServerConversion } from "@/lib/serverConverters";
-import type { ConversionOptions, ToolId } from "@/types/conversion";
+import type { ToolId } from "@/types/conversion";
 
 export const maxDuration = 300;
 
@@ -47,15 +47,6 @@ const ALLOWED_MIME_OVERRIDES: Record<string, string[]> = {
   ".pdf": ["application/pdf", "application/octet-stream"],
 };
 
-function parseOptions(raw: string | null): ConversionOptions {
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw) as ConversionOptions;
-  } catch {
-    return {};
-  }
-}
-
 async function validateFileBuffer(
   buffer: Buffer,
   expectedExt: string
@@ -82,7 +73,6 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const toolId = formData.get("toolId") as string | null;
-    const optionsRaw = formData.get("options") as string | null;
     const fileEntries = formData.getAll("files");
 
     if (!toolId) {
@@ -109,7 +99,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const options = parseOptions(optionsRaw);
     tempDir = await createTempDir();
     const inputPaths: string[] = [];
     const originalNames: string[] = [];
@@ -153,8 +142,7 @@ export async function POST(request: NextRequest) {
       tool.id,
       inputPaths,
       tempDir,
-      originalNames,
-      options
+      originalNames
     );
 
     return new NextResponse(new Uint8Array(result.buffer), {

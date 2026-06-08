@@ -79,9 +79,6 @@ export default function ConversionSuggestions({
         const formData = new FormData();
         formData.append("toolId", tool.id);
         files.forEach((f) => formData.append("files", f));
-        if (tool.id === "protect-pdf" && password) {
-          formData.append("options", JSON.stringify({ password }));
-        }
 
         const response = await fetch("/api/convert", {
           method: "POST",

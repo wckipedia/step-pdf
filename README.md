@@ -7,8 +7,8 @@ Free PDF and file conversion tools. Drop a file, pick a tool, download the resul
 ## Tech stack
 
 - **Next.js** (App Router) + **TypeScript** + **Tailwind CSS**
-- **Browser conversions:** [pdf-lib](https://pdf-lib.js.org/), [JSZip](https://stuk.github.io/jszip/)
-- **Server conversions:** LibreOffice, Ghostscript, Poppler, qpdf (optional, for advanced tools)
+- **Browser conversions:** [pdf-lib](https://pdf-lib.js.org/), [PDF.js](https://mozilla.github.io/pdf.js/), [@pdfsmaller/pdf-encrypt](https://www.npmjs.com/package/@pdfsmaller/pdf-encrypt), [JSZip](https://stuk.github.io/jszip/)
+- **Server conversions:** LibreOffice, Ghostscript, pdf2docx (Python)
 
 ## Tools
 
@@ -23,6 +23,8 @@ Free PDF and file conversion tools. Drop a file, pick a tool, download the resul
 | Merge PDF | multiple `.pdf` |
 | Split PDF | `.pdf` → zip of pages |
 | Rotate PDF | `.pdf` |
+| PDF to JPG | `.pdf` → zip of JPEGs |
+| Protect PDF | `.pdf` (password) |
 
 These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any static/Next.js host.
 
@@ -36,8 +38,6 @@ These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any 
 | PDF to Word | `.pdf` | pdf2docx (LibreOffice fallback) |
 | PDF to PowerPoint | `.pdf` | LibreOffice |
 | Compress PDF | `.pdf` | Ghostscript |
-| PDF to JPG | `.pdf` | Poppler |
-| Protect PDF | `.pdf` | qpdf |
 
 Server uploads are stored in a **temporary directory only** and deleted when the request finishes. Nothing is saved permanently.
 
@@ -60,14 +60,14 @@ Browser tools work out of the box. For server tools, install the native binaries
 
 ```bash
 brew install --cask libreoffice
-brew install ghostscript poppler qpdf
+brew install ghostscript
 pip3 install -r requirements.txt
 ```
 
 **Linux (Debian/Ubuntu):**
 
 ```bash
-sudo apt install libreoffice ghostscript poppler-utils qpdf python3-pip
+sudo apt install libreoffice ghostscript python3-pip
 pip3 install -r requirements.txt
 ```
 
@@ -82,13 +82,13 @@ pip3 install -r requirements.txt
 
 ## Deployment
 
-### Vercel (recommended for browser tools)
+### Vercel (browser + 9 tools)
 
-Connect the repo to Vercel and deploy with the default Next.js preset. Browser tools work with no extra setup.
+Connect the repo to Vercel and deploy with the default Next.js preset. All browser tools work with no extra setup.
 
-Server tools **will not work on Vercel** — the platform cannot run LibreOffice, Ghostscript, or similar binaries. Users will see a clear error if they try those tools.
+Server tools **will not work on Vercel** — the platform cannot run LibreOffice, Ghostscript, or Python. Users will see a clear error if they try those tools.
 
-### Self-hosted (full tool support)
+### Self-hosted
 
 For all browser + server tools, deploy to a Node.js host where you can install the native binaries (Railway, Render, Fly.io, a VPS, etc.):
 
@@ -107,6 +107,10 @@ Install the same `brew` / `apt` packages on the server as you would locally.
 
 ## API
 
+### `GET /api/health`
+
+Returns binary availability and which server tools are operational.
+
 ### `POST /api/convert`
 
 Used by server-side tools only. Browser tools never call this endpoint.
@@ -115,7 +119,7 @@ Used by server-side tools only. Browser tools never call this endpoint.
 
 - `toolId` — e.g. `word-to-pdf`, `pdf-to-word`, `compress-pdf`
 - `files` — one or more files
-- `options` — optional JSON, e.g. `{"password":"secret"}` for Protect PDF
+- `options` — optional JSON
 
 **Response:** converted file as a download, or JSON `{ "error": "..." }` on failure.
 
@@ -123,32 +127,35 @@ Used by server-side tools only. Browser tools never call this endpoint.
 
 ```
 app/
-  page.tsx                  # Homepage & conversion flow
+  page.tsx                  # Homepage (Server Component)
   layout.tsx                # Root layout & metadata
   globals.css               # Tailwind + brand styles
-  icon.png                  # Favicon
   api/convert/route.ts      # Server conversion endpoint
+  api/health/route.ts       # Binary health check
 components/
-  Navbar.tsx                # Logo + section links (smooth scroll)
+  ConversionFlow.tsx        # Client upload + conversion UI
+  Navbar.tsx
   Hero.tsx
   FileDropzone.tsx
   ConversionSuggestions.tsx
-  ToolGrid.tsx              # Tabbed tools browser
+  ToolGrid.tsx
   HowItWorks.tsx
   Ticker.tsx
-  Footer.tsx                # Vision & FAQ
+  Footer.tsx
 lib/
   conversionRules.ts        # Tool definitions & file-type mapping
   clientConverters.ts       # Browser PDF tools
-  serverConverters.ts       # pdf2docx, LibreOffice, Ghostscript, etc.
+  serverConverters.ts       # pdf2docx, LibreOffice, Ghostscript
+  pdfjsClient.ts            # PDF.js worker setup
   binaries.ts               # Native binary detection
+  tempFiles.ts              # Temp storage & cleanup
+  fileUtils.ts              # File helpers
 scripts/
   pdf_to_docx.py            # PDF → Word via pdf2docx
 requirements.txt            # Python deps (pdf2docx)
-  tempFiles.ts              # Temp storage & cleanup
-  fileUtils.ts              # File helpers
 types/
   conversion.ts             # Shared types
+.github/workflows/ci.yml    # Lint + build on push/PR
 public/
   step-pdf.png              # Brand asset
 ```

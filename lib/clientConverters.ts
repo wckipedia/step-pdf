@@ -1,8 +1,10 @@
+import { encryptPDF } from "@pdfsmaller/pdf-encrypt";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
 import JSZip from "jszip";
 import type { ConversionOptions, ConversionResult } from "@/types/conversion";
 import type { ToolId } from "@/types/conversion";
 import { buildOutputFilename } from "@/lib/fileUtils";
+import { loadPdfDocument } from "@/lib/pdfjsClient";
 
 async function loadImageBytes(file: File): Promise<{
   bytes: Uint8Array;
@@ -164,6 +166,67 @@ async function splitPdf(files: File[]): Promise<ConversionResult> {
   };
 }
 
+async function pdfToJpg(files: File[]): Promise<ConversionResult> {
+  const file = files[0];
+  const bytes = await file.arrayBuffer();
+  const pdf = await loadPdfDocument(bytes);
+  const zip = new JSZip();
+  const scale = 150 / 72;
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    const page = await pdf.getPage(pageNum);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not render PDF page.");
+
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise;
+
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) =>
+          b ? resolve(b) : reject(new Error("Failed to export page as JPEG.")),
+        "image/jpeg",
+        0.92
+      );
+    });
+    zip.file(`page-${pageNum}.jpg`, blob);
+  }
+
+  await pdf.destroy();
+
+  const zipBlob = await zip.generateAsync({ type: "blob" });
+  return {
+    blob: zipBlob,
+    filename: buildOutputFilename(file.name, ".zip", "jpg"),
+    mimeType: "application/zip",
+  };
+}
+
+async function protectPdf(
+  files: File[],
+  options?: ConversionOptions
+): Promise<ConversionResult> {
+  const file = files[0];
+  const password = options?.password?.trim();
+  if (!password) {
+    throw new Error("Password is required to protect a PDF.");
+  }
+
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const encrypted = await encryptPDF(bytes, password);
+
+  return {
+    blob: new Blob([encrypted.buffer as ArrayBuffer], {
+      type: "application/pdf",
+    }),
+    filename: buildOutputFilename(file.name, ".pdf", "protected"),
+    mimeType: "application/pdf",
+  };
+}
+
 async function rotatePdf(
   files: File[],
   options?: ConversionOptions
@@ -204,6 +267,10 @@ export async function runClientConversion(
       return splitPdf(files);
     case "rotate-pdf":
       return rotatePdf(files, options);
+    case "pdf-to-jpg":
+      return pdfToJpg(files);
+    case "protect-pdf":
+      return protectPdf(files, options);
     default:
       throw new Error("This tool runs on the server, not in the browser.");
   }
@@ -218,5 +285,7 @@ export function isClientTool(toolId: ToolId): boolean {
     "merge-pdf",
     "split-pdf",
     "rotate-pdf",
+    "pdf-to-jpg",
+    "protect-pdf",
   ].includes(toolId);
 }
