@@ -33,7 +33,12 @@ export interface ConversionTool {
   inputExtensions: string[];
   outputExtension: string;
   implemented: boolean;
-  requiredBinary?: "libreoffice" | "ghostscript" | "poppler" | "qpdf";
+  requiredBinary?:
+    | "libreoffice"
+    | "ghostscript"
+    | "poppler"
+    | "qpdf"
+    | "pdf2docx";
 }
 
 export type DropzoneState =

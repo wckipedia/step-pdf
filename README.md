@@ -8,7 +8,7 @@ Free PDF and file conversion tools. Drop a file, pick a tool, download the resul
 
 - **Next.js** (App Router) + **TypeScript** + **Tailwind CSS**
 - **Browser conversions:** [pdf-lib](https://pdf-lib.js.org/), [JSZip](https://stuk.github.io/jszip/)
-- **Server conversions:** LibreOffice, Ghostscript, Poppler, qpdf (optional, for advanced tools)
+- **Server conversions:** pdf2docx (PDF → Word), LibreOffice, Ghostscript, Poppler, qpdf (optional, for advanced tools)
 
 ## Tools
 
@@ -33,7 +33,7 @@ These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any 
 | Word to PDF | `.doc`, `.docx` | LibreOffice |
 | PowerPoint to PDF | `.ppt`, `.pptx` | LibreOffice |
 | Excel to PDF | `.xls`, `.xlsx` | LibreOffice |
-| PDF to Word | `.pdf` | LibreOffice |
+| PDF to Word | `.pdf` | pdf2docx (Python) |
 | PDF to PowerPoint | `.pdf` | LibreOffice |
 | Compress PDF | `.pdf` | Ghostscript |
 | PDF to JPG | `.pdf` | Poppler |
@@ -41,7 +41,7 @@ These work immediately after `pnpm dev` and deploy cleanly to **Vercel** or any 
 
 Server uploads are stored in a **temporary directory only** and deleted when the request finishes. Nothing is saved permanently.
 
-> **PDF → Word / PowerPoint** uses LibreOffice and works best on simple text-based PDFs. Scanned, encrypted, or heavily designed PDFs may fail or lose formatting.
+> **PDF → Word** uses [pdf2docx](https://github.com/dothinking/pdf2docx) for accurate text extraction. **PDF → PowerPoint** uses LibreOffice. Both work best on simple text-based PDFs. Scanned, encrypted, or heavily designed PDFs may fail or lose formatting.
 
 ## Quick start
 
@@ -59,6 +59,7 @@ Browser tools work out of the box. For server tools, install the native binaries
 **macOS:**
 
 ```bash
+pip3 install -r requirements.txt
 brew install --cask libreoffice
 brew install ghostscript poppler qpdf
 ```
@@ -66,6 +67,7 @@ brew install ghostscript poppler qpdf
 **Linux (Debian/Ubuntu):**
 
 ```bash
+pip3 install -r requirements.txt
 sudo apt install libreoffice ghostscript poppler-utils qpdf
 ```
 
@@ -157,7 +159,9 @@ components/
 lib/
   conversionRules.ts        # Tool definitions & file-type mapping
   clientConverters.ts       # Browser PDF tools
-  serverConverters.ts       # LibreOffice, Ghostscript, etc.
+  serverConverters.ts       # pdf2docx, LibreOffice, Ghostscript, etc.
+  pdf_to_docx.py            # PDF → Word via pdf2docx
+requirements.txt            # Python deps (pdf2docx)
   binaries.ts               # Native binary detection
   tempFiles.ts              # Temp storage & cleanup
   fileUtils.ts              # File helpers
