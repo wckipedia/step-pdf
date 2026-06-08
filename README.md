@@ -80,6 +80,22 @@ pip3 install -r requirements.txt
 | `pnpm start` | Run production server |
 | `pnpm lint` | Run ESLint |
 
+## CI
+
+GitHub Actions runs on every push and PR to `main` (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
+
+| Job | What it checks |
+|-----|----------------|
+| **ESLint** | Code style and Next.js lint rules |
+| **TypeScript** | `tsc --noEmit` |
+| **Project validation** | Tool registry consistency + Python script syntax |
+| **Production build** | `next build` succeeds; uploads `.next` artifact |
+| **Security audit** | `pnpm audit` fails on high-severity vulnerabilities |
+
+[Dependabot](.github/dependabot.yml) opens weekly PRs for npm packages and GitHub Actions updates.
+
+> CI expects `pnpm`, plus `typecheck`, `validate`, and `check` scripts in `package.json`. Those are added in other feature branches (e.g. SP-3/SP-4) before the pipeline passes on `main`.
+
 ## Deployment
 
 ### Vercel (browser + 9 tools)
