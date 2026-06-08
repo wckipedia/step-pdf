@@ -104,6 +104,7 @@ jobs:
         with:
           name: next-build
           path: .next/
+          include-hidden-files: true
           retention-days: 3
           if-no-files-found: error
 
